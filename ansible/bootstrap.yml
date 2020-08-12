@@ -16,6 +16,15 @@
       debug:
         var: ansible_env
 
+    - name: Install hashistack enterprise
+      include_role:
+        name: hashistack
+      vars:
+        software: "{{ item.key }}"
+        version: "{{ item.value }}"
+      loop: "{{ query('dict', hashicorp.tools_enterprise) }}"
+      when: lookup('env', 'consul_enterprise') | bool
+
     - name: Render consul acl configuration
       template: src=/etc/ansible/templates/consul-acl.hcl.j2 dest=/etc/consul.d/config-acl.hcl
       when: lookup('env', 'consul_acl') | bool

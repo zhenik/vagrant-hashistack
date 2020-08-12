@@ -14,6 +14,31 @@
         state: directory
         mode: '0755'
 
+    - name: Create /etc/ansible/group_vars directory if it does not exist
+      file:
+        path: /etc/ansible/group_vars
+        state: directory
+        mode: '0755'
+
+    - name: Create /etc/ansible/group_vars/all directory if it does not exist
+      file:
+        path: /etc/ansible/group_vars/all
+        state: directory
+        mode: '0755'
+
+    - name: Copy variables.yml
+      copy:
+        src: group_vars/all/variables.yml
+        dest: /etc/ansible/group_vars/all/variables.yml
+
+    - name: Copy roles directory
+      copy:
+        src: roles/
+        dest: /etc/ansible/roles/
+        remote_src: yes
+        directory_mode: yes
+        mode: '0755'
+
     - name: Copy ansible config
       copy:
         src: ansible.cfg
