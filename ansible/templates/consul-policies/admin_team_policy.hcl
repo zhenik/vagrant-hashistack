@@ -12,4 +12,4 @@ acl = "write"
 
 # This controls access to cluster-wide Consul operator information.
 # https://www.consul.io/docs/acl/acl-rules#operator-rules
-operator = "read"
+operator = "write"

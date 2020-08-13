@@ -126,6 +126,10 @@
       include_tasks: vault_consul_integration.yml
       when: lookup('env', 'consul_acl') | bool
 
+    - name: Deploy Enterprise features
+      include_tasks: enterprise.yml
+      when: lookup('env', 'consul_enterprise') | bool
+
     - name: Running poststart books
       include_tasks: "{{ item }}"
       loop: "{{ query('fileglob', \"/vagrant/vagrant/conf/post_bootstrap/*.yml\") | sort }}"

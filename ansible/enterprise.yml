@@ -1,0 +1,64 @@
+- name: Consul - initialise app-team namespace
+  shell:
+    cmd: consul namespace write /etc/ansible/templates/enterprise/consul/namespaces/definition/app_team.hcl
+
+- name: Consul - initialise db-team namespace
+  shell:
+    cmd: consul namespace write /etc/ansible/templates/enterprise/consul/namespaces/definition/db_team.hcl
+
+- name: Consul namespaces list
+  shell:
+    cmd: consul namespace list
+  register: consul_namespaces
+
+- name: Consul - print namespaces
+  debug:
+   msg: "{{ consul_namespaces.stdout }}"
+
+- name: Consul - create namespace app-team management token
+  shell:
+    cmd: consul acl token create -format=json -namespace app-team -description "App Team Administrator" -policy-name "namespace-management" | jq -r .SecretID
+  register: app_team_namespace_management_token
+
+- name: Consul - create namespace db-team management token
+  shell:
+    cmd: consul acl token create -format=json -namespace db-team -description "DB Team Administrator" -policy-name "namespace-management" | jq -r .SecretID
+  register: db_team_namespace_management_token
+
+- name: Consul - list all tokens for namespace app-team
+  shell:
+    cmd: consul acl token list -namespace app-team
+  register: namespace_app_team_tokens_list
+
+- name: Print tokens list -namespace app-team
+  debug:
+    msg: "{{ namespace_app_team_tokens_list.stdout }}"
+
+# example 1
+# 1. Create consul policy for db-team developer in namespace db-team
+# 2. Generate token
+#todo: 3. Try to access kv in namespace app-team: fail
+#todo: 4. Try to access kv in namespace db-nam: success
+- name: Consul - create policy for db-team developer, using db_team namespace management token
+  shell:
+    cmd: >
+    consul acl policy create \
+    -name db-team-developer-policy \
+    -description "Write services and intentions" \
+    -namespace db-team \
+    -rules @/etc/ansible/templates/enterprise/consul/namespaces/policy/db_developer_policy.hcl
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ db_team_namespace_management_token.stdout }}"
+
+- name: Consul - create token for db-team developer, using db_team namespace management token
+  shell:
+    cmd: >
+    consul acl token create -format=json \
+    -description "DB developer token" \
+    -namespace db-team \
+    -policy-name db-team-developer-policy | jq -r .SecretID
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ db_team_namespace_management_token.stdout }}"
+  register: db_team_namespace_developer_token
+
+- name: "Consul - fail to list all tokens for namespace app-team with db_team_namespace_developer_token {{ db_team_namespace_developer_token.stdout }}"
